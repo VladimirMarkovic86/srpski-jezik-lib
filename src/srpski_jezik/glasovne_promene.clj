@@ -1,6 +1,7 @@
 (ns srpski-jezik.glasovne-promene
   (:require [srpski-jezik.glasovne-promene :as gp]
-              [clojure.string :as cstr]))
+            [srpski-jezik.alati :refer :all]
+            [clojure.string :as cstr]))
 
 ; Гласови
 (def samoglasnici "аеиоу")
@@ -45,17 +46,21 @@
 
 (def sliveni "цчџћђ")
 
-(defn samoglasnik?
+(defn- samoglasnik?
   ""
   [slovo]
-  (cstr/index-of samoglasnici slovo))
+  (if slovo
+   (cstr/index-of samoglasnici slovo)
+   nil))
 
-(defn suglasnik?
+(defn- suglasnik?
   ""
   [slovo]
-  (cstr/index-of suglasnici slovo))
+  (if slovo
+   (cstr/index-of suglasnici slovo)
+   nil))
 
-(defn suglasnicka-grupa-konkretno
+(defn- suglasnicka-grupa-konkretno
   ""
   [slog
    trenutni-index]
@@ -67,23 +72,24 @@
     )
    true))
 
-(defn suglasnicka-grupa?
+(defn- suglasnicka-grupa?
   ""
   [slog]
   (suglasnicka-grupa-konkretno slog 0))
 
-(defn sonant?
+(defn- sonant?
   ""
   [slovo]
-  (cstr/index-of sonanti slovo))
+  (if slovo
+   (cstr/index-of sonanti slovo)
+   nil))
 
-(defn sonantna-grupa?
+(defn- sonantna-grupa?
   ""
   [slog]
-  (let [prvo-slovo  (first slog)
-        drugo-slovo  (first (rest slog))
-        trece-slovo  (first (rest (rest slog))
-                      )]
+  (let [prvo-slovo  (get slog 0)
+        drugo-slovo  (get slog 1)
+        trece-slovo  (get slog 2)]
    (if (and (sonant? prvo-slovo)
             (sonant? drugo-slovo))
     (not (and (= drugo-slovo \ј)
@@ -92,107 +98,143 @@
     false)
    ))
 
-(defn praskavi?
+(defn- prednjonepcani?
   ""
   [slovo]
-  (cstr/index-of praskavi slovo))
+  (if slovo
+   (cstr/index-of prednjonepcani slovo)
+   nil))
 
-(defn suglasnici-bez-vjlljr?
+(defn- usneni?
   ""
   [slovo]
-  (cstr/index-of suglasnici-bez-vjlljr slovo))
+  (if slovo
+   (cstr/index-of usneni slovo)
+   nil)
+  )
 
-(defn praskavi-prvi-suglasnik-bez-vjlljr-drugi?
+(defn- praskavi?
+  ""
+  [slovo]
+  (if slovo
+   (cstr/index-of praskavi slovo)
+   nil))
+
+(defn- zvucno?
+  ""
+  [slovo]
+  (if slovo
+   (cstr/index-of zvucni slovo)
+   nil))
+
+(defn- bezvucno?
+  ""
+  [slovo]
+  (if slovo
+   (cstr/index-of bezvucni slovo)
+   nil))
+
+(defn- suglasnici-bez-vjlljr?
+  ""
+  [slovo]
+  (if slovo
+   (cstr/index-of suglasnici-bez-vjlljr slovo)
+   nil))
+
+(defn- praskavi-prvi-suglasnik-bez-vjlljr-drugi?
   ""
   [slog]
-  (let [prvo-slovo  (first slog)
-        drugo-slovo  (first (rest slog))]
+  (let [prvo-slovo  (get slog 0)
+        drugo-slovo  (get slog 1)]
    (and (praskavi? prvo-slovo)
         (suglasnici-bez-vjlljr? drugo-slovo))
    ))
 
-(defn slogotvorno-r-na-pocetku?
+(defn- slogotvorno-r-na-pocetku?
   ""
   [slog]
-  (let [prvo-slovo (first slog)
-        drugo-slovo (first (rest slog))
-        trece-slovo (first (rest (rest slog))
-                     )]
+  (let [prvo-slovo (get slog 0)
+        drugo-slovo (get slog 1)
+        trece-slovo (get slog 2)]
    (and (= prvo-slovo \р)
         (suglasnik? drugo-slovo))
    ))
 
-(defn slogotvorno-r-u-sredini?
+(defn- slogotvorno-r-u-sredini?
   ""
   [slog]
-  (let [prvo-slovo (first slog)
-        drugo-slovo (first (rest slog))
-        trece-slovo (first (rest (rest slog))
-                     )
-        cetvrto-slovo (first (rest (rest (rest slog)))
-                     )]
+  (let [prvo-slovo (get slog 0)
+        drugo-slovo (get slog 1)
+        trece-slovo (get slog 2)
+        cetvrto-slovo (get slog 3)]
    (and (suglasnik? prvo-slovo)
         (= drugo-slovo \р)
         (suglasnik? trece-slovo)
         (samoglasnik? cetvrto-slovo))
    ))
 
-(defn slogotvorno-l?
+(defn- slogotvorno-l?
   ""
   [slog]
   (let [prvo-slovo (first slog)
-        drugo-slovo (first (rest slog))]
+        drugo-slovo (get slog 1)]
    (and (= prvo-slovo \л)
         (suglasnik? drugo-slovo))
    ))
 
-(defn prvo-samoglasnik?
+(defn- prvo-samoglasnik?
   ""
   [rec]
   (samoglasnik? (first rec))
   )
 
-(defn prvo-suglasnik?
+(defn- prvo-suglasnik?
   ""
   [rec]
   (suglasnik? (first rec))
   )
 
-(defn poslednje-samoglasnik?
+(defn- poslednje-samoglasnik?
   ""
   [rec]
   (samoglasnik? (last rec))
   )
 
-(defn poslednje-suglasnik?
+(defn- poslednje-suglasnik?
   ""
   [rec]
   (suglasnik? (last rec))
   )
 
-(defn promena-zvucni-u-bezvucni
+(defn- promena-zvucni-u-bezvucni-i-obratno
   ""
-  [slovo]
-  (let [index-zvucnog (cstr/index-of zvucni slovo)]
-   (try
-    (.charAt bezvucni index-zvucnog)
-    (catch StringIndexOutOfBoundsException e
-     (println "Нисте проследили звучно слово.")
-     (println (.getMessage e))
-     slovo))
-   ))
+  [slovo
+   iz-ovog
+   u-ovaj]
+  (if slovo
+   (let [index-u-iz-ovog (cstr/index-of iz-ovog slovo)]
+    (try
+     (.charAt u-ovaj index-u-iz-ovog)
+     (catch StringIndexOutOfBoundsException e
+      (println "Нисте проследили звучно слово.")
+      (println (.getMessage e))
+      slovo))
+    )
+   nil))
 
-(defn promena-nenepcani-u-prednjonepcani
+(defn- promena-nenepcani-u-prednjonepcani
   ""
   [slovo]
-  (let [index-nenepcanog (cstr/index-of nenepcani slovo)]
-   (try
-    (.charAt prednjonepcani index-nenepcanog)
-    (catch StringIndexOutOfBoundsException e
-     (println "Нисте проследили ненепчано слово.")
-     (println (.getMessage e))
-     slovo))
-   ))
+  (if slovo
+   (let [index-nenepcanog (cstr/index-of nenepcani slovo)]
+    (try
+     (.charAt prednjonepcani index-nenepcanog)
+     (catch StringIndexOutOfBoundsException e
+      (println "Нисте проследили ненепчано слово.")
+      (println (.getMessage e))
+      slovo))
+    )
+   nil))
 
 (defn- vektor-slogova-samoglasnik-na-kraju
   ""
@@ -221,134 +263,7 @@
      ))
   )
 
-(defn find-index-to-remove
-  ""
-  [itr
-   index-to-remove
-   current-index]
-  (if (< current-index (count index-to-remove))
-   (if (= itr (index-to-remove current-index))
-    current-index
-    (recur itr
-           index-to-remove
-           (inc current-index))
-    )
-   false))
-
-(defn remove-index-from-vector
-  ""
-  [data-vector
-   index]
-  (let [removed-index  (reduce (fn [acc
-                                    elem]
-                                (let [itr  (:itr acc)
-                                      index-to-remove  (:index-to-remove acc)
-                                      result  (:result acc)
-                                      compared-index  (find-index-to-remove itr
-                                                                            index-to-remove
-                                                                            0)]
-                                 (if compared-index
-                                  (if (< (count index-to-remove) 2)
-                                   {:itr (inc itr)
-                                    :index-to-remove []
-                                    :result result}
-                                   {:itr (inc itr)
-                                    :index-to-remove (remove-index-from-vector
-                                                      index-to-remove
-                                                      compared-index)
-                                    :result result})
-                                  {:itr (inc itr)
-                                   :index-to-remove index-to-remove
-                                   :result (conj result elem)})
-                                 ))
-                               {:itr 0
-                                :index-to-remove (if (vector? index)
-                                                  index
-                                                  [index])
-                                :result []}
-                               data-vector)]
-   (:result removed-index))
-  )
-
-(defn replace-in-vector-on-index
-  ""
-  [data-vector
-   element
-   index]
-  (let [replaced-elements  (reduce (fn [acc
-                                        elem]
-                                    (let [itr  (:itr acc)
-                                          replace-on-index  (:replace-on-index acc)
-                                          replace-element  (:replace-element acc)
-                                          result  (:result acc)
-                                          compared-index  (find-index-to-remove
-                                                           itr
-                                                           replace-on-index
-                                                           0)]
-                                     (if compared-index
-                                      {:itr  (inc itr)
-                                       :replace-on-index  (remove-index-from-vector
-                                                           replace-on-index
-                                                           compared-index)
-                                       :replace-element  (remove-index-from-vector
-                                                          replace-element
-                                                          compared-index)
-                                       :result (conj result
-                                                     (replace-element
-                                                      compared-index))}
-                                      {:itr (inc itr)
-                                       :replace-on-index replace-on-index
-                                       :replace-element replace-element
-                                       :result (conj result
-                                                     elem)})
-                                     ))
-                                   {:itr 0
-                                    :replace-on-index (if (vector? index)
-                                                          index
-                                                          [index])
-                                    :replace-element (if (vector? element)
-                                                         element
-                                                         [element])
-                                    :result []}
-                                   data-vector)]
-   (:result replaced-elements))
-  )
-
-(defn insert-in-vector-on-index
-  ""
-  [data-vector
-   element
-   index]
-  (let [inserted-elements  (reduce (fn [acc
-                                        elem]
-                                    (let [itr  (:itr acc)
-                                          insert-on-index  (:insert-on-index acc)
-                                          insert-element  (:insert-element acc)
-                                          result  (:result acc)]
-                                     (if (= itr insert-on-index)
-                                      {:itr  (inc itr)
-                                       :insert-on-index  -1
-                                       :insert-element  []
-                                       :result (reduce conj
-                                                       result
-                                                       insert-element)}
-                                      {:itr  (inc itr)
-                                       :insert-on-index  insert-on-index
-                                       :insert-element  insert-element
-                                       :result (conj result
-                                                     elem)}))
-                                    )
-                                   {:itr 0
-                                    :insert-on-index index
-                                    :insert-element (if (vector? element)
-                                                         element
-                                                         [element])
-                                    :result []}
-                                   data-vector)]
-   (:result inserted-elements))
-  )
-
-(defn nalepi-suglasnik-na-kraj
+(defn- nalepi-suglasnik-na-kraj
   ""
   [vektor-slogova]
   (if-not (empty? vektor-slogova)
@@ -398,7 +313,7 @@
            kriterijum-fn?))
    vektor-slogova))
 
-(defn razdvoj-prva-dva-u-slogu
+(defn- razdvoj-prva-dva-u-slogu
   ""
   [vektor-slogova
    kriterijum-fn?]
@@ -408,7 +323,7 @@
                                      (dec (count vektor-slogova))
                                      kriterijum-fn?))
 
-(defn razdvoj-slogotvorno-r-u-sredini-konkretno
+(defn- razdvoj-slogotvorno-r-u-sredini-konkretno
   ""
   [vektor-slogova
    trenutni-index]
@@ -416,7 +331,7 @@
    (if (slogotvorno-r-u-sredini? (vektor-slogova trenutni-index))
     (let [slog (vektor-slogova trenutni-index)
           prvo-slovo  (first slog)
-          drugo-slovo  (first (rest slog))
+          drugo-slovo  (get slog 1)
           prvi-deo-sloga  (str prvo-slovo
                                drugo-slovo)
           drugi-deo-sloga  (cstr/replace slog
@@ -433,40 +348,12 @@
     )
    vektor-slogova))
 
-(defn razdvoj-slogotvorno-r-u-sredini
+(defn- razdvoj-slogotvorno-r-u-sredini
   ""
   [vektor-slogova]
   (razdvoj-slogotvorno-r-u-sredini-konkretno vektor-slogova
                                              0)
   )
-
-; Testiranje
-;(gp/vektor-slogova-reci "милан")
-;(gp/vektor-slogova-reci "негица")
-;(gp/vektor-slogova-reci "марко")
-;(gp/vektor-slogova-reci "владимир")
-;(gp/vektor-slogova-reci "милош")
-;(gp/vektor-slogova-reci "милица")
-;(gp/vektor-slogova-reci "слађан")
-;(gp/vektor-slogova-reci "октавија")
-;(gp/vektor-slogova-reci "немања")
-;(gp/vektor-slogova-reci "јована")
-;(gp/vektor-slogova-reci "павле")
-;(gp/vektor-slogova-reci "ивица")
-;(gp/vektor-slogova-reci "наташа")
-;(gp/vektor-slogova-reci "марија")
-;(gp/vektor-slogova-reci "данило")
-;(gp/vektor-slogova-reci "душанка")
-;(gp/vektor-slogova-reci "душка")
-;(gp/vektor-slogova-reci "босиљка")
-;(gp/vektor-slogova-reci "милић")
-
-;(gp/vektor-slogova-reci "разљутити")
-;(gp/vektor-slogova-reci "одузети")
-;(gp/vektor-slogova-reci "истерати")
-
-;ра-зљу-ти-ти, о-ду-зе-ти, и-сте-рати
-;раз-љу-ти-ти, од-у-зе-ти, ис-те-ра-ти
 
 (defn vektor-slogova-reci
   "Слог и носиоци слога
@@ -536,8 +423,13 @@
     
     У српском језику, предност се даје семантичкој граници слога."
   [rec]
-  (let [samoglasnik-na-kraju  (vektor-slogova-samoglasnik-na-kraju rec [] "" 0)
-        nalepljen-suglasnik-na-kraj  (nalepi-suglasnik-na-kraj samoglasnik-na-kraju)
+  (let [samoglasnik-na-kraju  (vektor-slogova-samoglasnik-na-kraju
+                               (cstr/lower-case rec)
+                               []
+                               ""
+                               0)
+        nalepljen-suglasnik-na-kraj  (nalepi-suglasnik-na-kraj
+                                      samoglasnik-na-kraju)
         ; Када се у средини речи нађе више сугласника од којих је на првом месту неки струјни или сливени, rраница слога ће бити ucпpeg те групе сугласника
           ; bez implementacije
         ; испред сугласничке групе биће граница слога и ако се у групи сугла­ сника у средини речи на другом месту налази неки од сонаната в, ј, р, л или љ, а испред њега било који други сугласник сем сонанта:
@@ -616,7 +508,7 @@
   (if (nepostojano-a? rec
                       nastavak)
    (nepostojano-a-transformacija (cstr/lower-case rec)
-                                 nastavak)
+                                 (cstr/lower-case nastavak))
    (str rec nastavak))
   )
 
@@ -683,15 +575,6 @@
     писаЛ-писаО
     даЛ-даО
     сеЛба-сеОба
-             
-             Јд. 	     Мн.
-   Ном 	   ту̀жилац  	ту̀жиоци
-   Ген. 	  ту̀жиоца  	ту̀жила̄ца̄
-   Дат. 	  ту̀жиоцу  	ту̀жиоцима
-   Ак. 	   ту̀жиоца  	ту̀жиоце
-   Вок. 	  ту̀жиоче 	 ту̀жиоци
-   Инстр. 	ту̀жиоцем 	ту̀жиоцима
-   Лок. 	  ту̀жиоцу 	 ту̀жиоцима
    
    изузеци:
     У ном. једн. и ген. множ. код
@@ -699,7 +582,8 @@
     читаЛАЦА) Л је на почетку,
     а не на крају слога,
     па није прешло у О."
-  [rec]
+  [rec
+   & opciono]
   (if (prelazak-l-u-o? rec)
    (prelazak-l-u-o-transformacija rec)
    rec))
@@ -742,7 +626,7 @@
         poslednje-slovo-u-reci      (get rec index-poslednjeg-slova)
         prvo-slovo-nastavka         (first nastavak)]
    (and (= \ј prvo-slovo-nastavka)
-        (cstr/index-of usneni poslednje-slovo-u-reci))
+        (usneni? poslednje-slovo-u-reci))
    ))
 
 (defn- jotovanje-b-transformacija
@@ -782,11 +666,11 @@
   (if (jotovanje-a? rec
                     nastavak)
    (jotovanje-a-transformacija (cstr/lower-case rec)
-                               nastavak)
+                               (cstr/lower-case nastavak))
    (if (jotovanje-b? rec
                      nastavak)
     (jotovanje-b-transformacija (cstr/lower-case rec)
-                                nastavak)
+                                (cstr/lower-case nastavak))
     (str rec nastavak))
    ))
 
@@ -867,11 +751,11 @@
   (if (gubljenje-suglasnika-a? rec
                                nastavak)
    (gubljenje-suglasnika-a-transformacija (cstr/lower-case rec)
-                                          nastavak)
+                                          (cstr/lower-case nastavak))
    (if (gubljenje-suglasnika-b? rec
                                 nastavak)
     (gubljenje-suglasnika-b-transformacija (cstr/lower-case rec)
-                                           nastavak)
+                                           (cstr/lower-case nastavak))
     (str rec nastavak))
    )
   )
@@ -935,7 +819,7 @@
   (if (palatalizacija-i-a? rec
                            nastavak)
    (palatalizacija-i-a-transformacija (cstr/lower-case rec)
-                                      nastavak)
+                                      (cstr/lower-case nastavak))
    (str rec nastavak))
   )
 
@@ -985,7 +869,7 @@
   (if (palatalizacija-i-b? rec
                            nastavak)
    (palatalizacija-i-b-transformacija (cstr/lower-case rec)
-                                      nastavak)
+                                      (cstr/lower-case nastavak))
    (str rec nastavak))
   )
 
@@ -1050,7 +934,194 @@
   (if (palatalizacija-ii? rec
                           nastavak)
    (palatalizacija-ii-transformacija (cstr/lower-case rec)
-                                     nastavak)
-   (str rec nastavak))
+                                     (cstr/lower-case nastavak))
+   (str rec
+        nastavak))
   )
+
+(defn- jspmt-a?
+  ""
+  [rec
+   nastavak]
+  (let [index-poslednjeg  (dec (count rec))
+        poslednje-slovo-reci  (get rec index-poslednjeg)
+        prvo-slovo-nastavka  (first nastavak)]
+   (and (or (= \с poslednje-slovo-reci)
+            (= \з poslednje-slovo-reci))
+        (prednjonepcani? prvo-slovo-nastavka))
+   ))
+
+(defn- jspmt-a-transformacija
+  ""
+  [rec
+   nastavak]
+  (let [index-poslednjeg  (dec (count rec))
+        poslednje-slovo-reci  (get rec index-poslednjeg)
+        rec-bez-poslednjeg-slova (.substring rec
+                                             0
+                                             index-poslednjeg)]
+   (case poslednje-slovo-reci
+    \с  (str rec-bez-poslednjeg-slova \ш nastavak)
+    \з  (str rec-bez-poslednjeg-slova \ж nastavak)
+    (str rec
+         nastavak))
+   ))
+
+(defn jspmt-a
+  "ЈЕДНАЧЕЊЕ ПО МЕСТУ ТВОРБЕ (ЈСПМТ)
+   а) Зубни С и З прелазе у
+   предњонепчане (\"кукичаве\")
+   Ш и Ж испред предњонепча-
+   них (\"кукичавих\").
+   
+    * Чим видиш два \"кукичава\"
+    један до другог, извршено је
+    ЈСПМТ! *
+   
+   пример:
+    паЗ+Ња=паЖЊа
+    ноС+Ња=ноШЊа
+   
+   изузеци:
+    а) ЈСПМТ се не врши код
+    сложеница чији префикс
+    завршава на -З, а реч почиње
+    на Љ- (иЗ+Љубити=иЗљубити,
+    раЗ+Љутити=раЗљутити)."
+  [rec
+   nastavak]
+  (if (jspmt-a? rec
+                nastavak)
+   (jspmt-a-transformacija (cstr/lower-case rec)
+                           (cstr/lower-case nastavak))
+   (str rec
+        nastavak))
+  )
+
+(defn- jspmt-b?
+  ""
+  [rec
+   nastavak]
+  (let [index-poslednjeg  (dec (count rec))
+        poslednje-slovo-reci  (get rec index-poslednjeg)
+        prvo-slovo-nastavka  (first nastavak)]
+   (and (= \н poslednje-slovo-reci)
+        (usneni? prvo-slovo-nastavka))
+   ))
+
+(defn- jspmt-b-transformacija
+  ""
+  [rec
+   nastavak]
+  (let [index-poslednjeg  (dec (count rec))
+        rec-bez-poslednjeg-slova (.substring rec
+                                             0
+                                             index-poslednjeg)]
+   (str rec-bez-poslednjeg-slova \м nastavak))
+  )
+
+(defn jspmt-b
+  "ЈЕДНАЧЕЊЕ ПО МЕСТУ ТВОРБЕ (ЈСПМТ)
+   б) Н испред уснених
+   (углавном Б) прелазе у М.
+   
+    * Чим видиш два \"кукичава\"
+    један до другог, извршено је
+    ЈСПМТ! *
+   
+   пример:
+    одбраН+Бени=одбраМБени
+    стаН+Бени=стаМБени
+   
+   изузеци:
+    б) ЈСПМТ се не врши код
+    сложеница
+    (једаН+Пут=једаНпут)."
+  [rec
+   nastavak]
+  (if (jspmt-b? rec
+                nastavak)
+   (jspmt-b-transformacija (cstr/lower-case rec)
+                           (cstr/lower-case nastavak))
+   (str (cstr/lower-case rec)
+        (cstr/lower-case nastavak))
+   ))
+
+(defn- jspz?
+  ""
+  [rec
+   nastavak]
+  (let [poslednje-slovo-reci  (get rec (dec (count rec))
+                               )
+        prvo-slovo-nastavka  (get nastavak 0)
+        poslednje-slovo-reci-zvucno  (zvucno? poslednje-slovo-reci)
+        prvo-slovo-nastavka-zvucno  (zvucno? prvo-slovo-nastavka)]
+   (if (or (and (not poslednje-slovo-reci-zvucno)
+                (not prvo-slovo-nastavka-zvucno))
+           (and (number? poslednje-slovo-reci-zvucno)
+                (number? prvo-slovo-nastavka-zvucno)))
+    false
+    true))
+  )
+
+(defn- jspz-transformacija
+  ""
+  [rec
+   nastavak]
+  (let [index-poslednjeg-slova  (dec (count rec))
+        poslednje-slovo-reci  (get rec index-poslednjeg-slova)
+        prvo-slovo-nastavka  (get nastavak 0)
+        prvo-slovo-nastavka-zvucno  (zvucno? prvo-slovo-nastavka)
+        rec-bez-poslednjeg-slova  (.substring rec 0 index-poslednjeg-slova)
+        izmenjeno-slovo  (if prvo-slovo-nastavka-zvucno
+                          (promena-zvucni-u-bezvucni-i-obratno poslednje-slovo-reci
+                                                               bezvucni
+                                                               zvucni)
+                          (promena-zvucni-u-bezvucni-i-obratno poslednje-slovo-reci
+                                                               zvucni
+                                                               bezvucni))]
+   
+   (str rec-bez-poslednjeg-slova
+        izmenjeno-slovo
+        nastavak))
+  )
+
+(defn jspz
+  "ЈЕДНАЧЕЊЕ
+   ПО ЗВУЧНОСТИ
+   (ЈСПЗ)
+   
+   Када се један до другог нађу
+   два сугласника различита по
+   звучности, морају се изједна-
+   чити (какав је по звучности
+   други, такав мора бити и
+   први).
+   
+   пример:
+    враБ+Ца=враПЦа
+    срБ+ски=срПСки
+    сваТ+Ба=сваДБа
+   
+   изузеци:
+    Д испред С и Ш остаје
+    непромењено (преДСедник,
+    преДШколски, оДСуство,
+    поДШишати), не прелазе у Т.
+    
+    Код већине страних имена
+    (ВашинГТон, РенТГен - али
+    апарат је ренДГен) и новијих
+    речи старог порекла
+    (драГСтор, ЛонГПлеј,
+    НоКДаун, штрајКБрехер) ЈСПЗ
+    се не врши."
+  [rec
+   nastavak]
+  (if (jspz? rec nastavak)
+   (jspz-transformacija (cstr/lower-case rec)
+                        (cstr/lower-case nastavak))
+   (str (cstr/lower-case rec)
+        (cstr/lower-case nastavak))
+   ))
 
