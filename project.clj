@@ -1,9 +1,11 @@
 (defproject srpski_jezik "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
-  :url "http://example.com/FIXME"
+  :description "Srpski jezik"
+  :url "http://gitlab:1610/VladimirMarkovic86/srpski-jezik"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.8.0"]]
+  :dependencies [[org.clojure/clojure "1.9.0"]
+                 [org.vladimir/utils-lib "0.1.0"]
+                 ]
   
   :main ^:skip-aot srpski-jezik.padezi
   :target-path "target/%s"

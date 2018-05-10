@@ -1,6 +1,6 @@
 (ns srpski-jezik.glasovne-promene
   (:require [srpski-jezik.glasovne-promene :as gp]
-            [srpski-jezik.alati :refer :all]
+            [utils-lib.core :refer :all]
             [clojure.string :as cstr]))
 
 ; Гласови
@@ -134,6 +134,32 @@
    (cstr/index-of bezvucni slovo)
    nil))
 
+(defn- palatalizacija-i-a-izmena-slova
+  ""
+  [slovo]
+  (case slovo
+   \к  \ч
+   \г  \ж
+   \х  \ш
+   slovo))
+
+(defn- palatalizacija-i-b-izmena-slova
+  ""
+  [slovo]
+  (case slovo
+   \ц  \ч
+   \з  \ж
+   slovo))
+
+(defn- palatalizacija-ii-izmena-slova
+  ""
+  [slovo]
+  (case slovo
+   \к  \ц
+   \г  \з
+   \х  \с
+   slovo))
+
 (defn- suglasnici-bez-vjlljr?
   ""
   [slovo]
@@ -200,6 +226,19 @@
   (samoglasnik? (last rec))
   )
 
+(defn ukloni-samoglasnik-na-kraju
+  ""
+  [rec]
+  (let [rec  (cstr/lower-case rec)]
+   (if (poslednje-samoglasnik? rec)
+    (let [indeks-poslednjeg-slova  (dec (count rec))
+          rec  (.substring rec
+                           0
+                           indeks-poslednjeg-slova)]
+     rec)
+    rec))
+  )
+
 (defn- poslednje-suglasnik?
   ""
   [rec]
@@ -212,9 +251,9 @@
    iz-ovog
    u-ovaj]
   (if slovo
-   (let [index-u-iz-ovog (cstr/index-of iz-ovog slovo)]
+   (let [indeks-u-iz-ovog (cstr/index-of iz-ovog slovo)]
     (try
-     (.charAt u-ovaj index-u-iz-ovog)
+     (.charAt u-ovaj indeks-u-iz-ovog)
      (catch StringIndexOutOfBoundsException e
       (println "Нисте проследили звучно слово.")
       (println (.getMessage e))
@@ -226,9 +265,9 @@
   ""
   [slovo]
   (if slovo
-   (let [index-nenepcanog (cstr/index-of nenepcani slovo)]
+   (let [indeks-nenepcanog (cstr/index-of nenepcani slovo)]
     (try
-     (.charAt prednjonepcani index-nenepcanog)
+     (.charAt prednjonepcani indeks-nenepcanog)
      (catch StringIndexOutOfBoundsException e
       (println "Нисте проследили ненепчано слово.")
       (println (.getMessage e))
@@ -241,21 +280,21 @@
   [rec
    vektor-slogova
    slog
-   index-trenutnog-slova]
+   indeks-trenutnog-slova]
   (let [duzina-reci             (count rec)
-        trenutno-slovo          (get rec index-trenutnog-slova)
+        trenutno-slovo          (get rec indeks-trenutnog-slova)
         dodato-na-slog          (str slog
                                      trenutno-slovo)]
-   (if (< index-trenutnog-slova duzina-reci)
+   (if (< indeks-trenutnog-slova duzina-reci)
     (if (samoglasnik? trenutno-slovo)
      (recur rec
             (conj vektor-slogova dodato-na-slog)
             ""
-            (inc index-trenutnog-slova))
+            (inc indeks-trenutnog-slova))
      (recur rec
             vektor-slogova
             dodato-na-slog
-            (inc index-trenutnog-slova))
+            (inc indeks-trenutnog-slova))
      )
     (if (empty? dodato-na-slog)
      vektor-slogova
@@ -268,14 +307,14 @@
   [vektor-slogova]
   (if-not (empty? vektor-slogova)
    (let [broj-slogova  (count vektor-slogova)
-         index-poslednjeg  (dec broj-slogova)
+         indeks-poslednjeg  (dec broj-slogova)
          poslednji-slog  (vektor-slogova (dec broj-slogova))]
     (if (suglasnicka-grupa? poslednji-slog)
-     (let [index-pretposlednjeg  (dec index-poslednjeg)
-           pretposlednji-slog  (vektor-slogova index-pretposlednjeg)
+     (let [indeks-pretposlednjeg  (dec indeks-poslednjeg)
+           pretposlednji-slog  (vektor-slogova indeks-pretposlednjeg)
            vektor-bez-zadnja-dva  (remove-index-from-vector vektor-slogova
-                                                            [index-pretposlednjeg
-                                                             index-poslednjeg])]
+                                                            [indeks-pretposlednjeg
+                                                             indeks-poslednjeg])]
       (conj vektor-bez-zadnja-dva (str pretposlednji-slog poslednji-slog))
       )
      vektor-slogova))
@@ -284,32 +323,32 @@
 (defn- razdvoj-prva-dva-u-slogu-konkretna
   ""
   [vektor-slogova
-   trenutni-index
+   trenutni-indeks
    broj-slogova
-   index-poslednjeg
+   indeks-poslednjeg
    kriterijum-fn?]
-  (if (< trenutni-index index-poslednjeg)
-   (if (kriterijum-fn? (vektor-slogova (inc trenutni-index))
+  (if (< trenutni-indeks indeks-poslednjeg)
+   (if (kriterijum-fn? (vektor-slogova (inc trenutni-indeks))
         )
-    (let [trenutni-slog  (vektor-slogova trenutni-index)
-          naredni-slog  (vektor-slogova (inc trenutni-index))
+    (let [trenutni-slog  (vektor-slogova trenutni-indeks)
+          naredni-slog  (vektor-slogova (inc trenutni-indeks))
           novi-vektor-slogova  (replace-in-vector-on-index
                                 vektor-slogova
                                 [(str trenutni-slog (get naredni-slog 0))
                                  (cstr/replace naredni-slog
                                                (str (first naredni-slog))
                                                "")]
-                                [trenutni-index
-                                 (inc trenutni-index)])]
+                                [trenutni-indeks
+                                 (inc trenutni-indeks)])]
      (recur novi-vektor-slogova
-            (inc trenutni-index)
+            (inc trenutni-indeks)
             broj-slogova
-            index-poslednjeg
+            indeks-poslednjeg
             kriterijum-fn?))
     (recur vektor-slogova
-           (inc trenutni-index)
+           (inc trenutni-indeks)
            broj-slogova
-           index-poslednjeg
+           indeks-poslednjeg
            kriterijum-fn?))
    vektor-slogova))
 
@@ -326,10 +365,10 @@
 (defn- razdvoj-slogotvorno-r-u-sredini-konkretno
   ""
   [vektor-slogova
-   trenutni-index]
-  (if (< trenutni-index (count vektor-slogova))
-   (if (slogotvorno-r-u-sredini? (vektor-slogova trenutni-index))
-    (let [slog (vektor-slogova trenutni-index)
+   trenutni-indeks]
+  (if (< trenutni-indeks (count vektor-slogova))
+   (if (slogotvorno-r-u-sredini? (vektor-slogova trenutni-indeks))
+    (let [slog (vektor-slogova trenutni-indeks)
           prvo-slovo  (first slog)
           drugo-slovo  (get slog 1)
           prvi-deo-sloga  (str prvo-slovo
@@ -340,11 +379,11 @@
      (recur (insert-in-vector-on-index vektor-slogova
                                        [prvi-deo-sloga
                                         drugi-deo-sloga]
-                                       trenutni-index)
-            (inc trenutni-index))
+                                       trenutni-indeks)
+            (inc trenutni-indeks))
      )
     (recur vektor-slogova
-           (inc trenutni-index))
+           (inc trenutni-indeks))
     )
    vektor-slogova))
 
@@ -432,7 +471,7 @@
                                       samoglasnik-na-kraju)
         ; Када се у средини речи нађе више сугласника од којих је на првом месту неки струјни или сливени, rраница слога ће бити ucпpeg те групе сугласника
           ; bez implementacije
-        ; испред сугласничке групе биће граница слога и ако се у групи сугла­ сника у средини речи на другом месту налази неки од сонаната в, ј, р, л или љ, а испред њега било који други сугласник сем сонанта:
+        ; испред сугласничке групе биће граница слога и ако се у групи сугла­сника у средини речи на другом месту налази неки од сонаната в, ј, р, л или љ, а испред њега било који други сугласник сем сонанта:
           ; bez implementacije
         ; ако групу сугласника у речи чине два сонанта, граница слога долази између њих, па један припада претходном, а други следећем слогу
         razdvojeni-sonanti-u-slogu  (razdvoj-prva-dva-u-slogu
@@ -459,15 +498,17 @@
   [rec
    nastavak]
   (let [duzina-reci                (count rec)
-        index-pretposlednjeg-slova (- duzina-reci 2)]
+        indeks-pretposlednjeg-slova (- duzina-reci 2)]
    (and (= (cstr/last-index-of rec
                                \а)
-           index-pretposlednjeg-slova)
+           indeks-pretposlednjeg-slova)
         (< 3 duzina-reci)
         (cstr/index-of "црнк"
                        (get rec
                             (dec duzina-reci))
-         ))
+         )
+        (not= nastavak
+              ""))
    ))
 
 (defn- nepostojano-a-transformacija
@@ -478,8 +519,8 @@
         osnova-reci-bez-a (.substring rec 0 (- duzina-reci 2))
         poslednje-slovo   (get rec (dec duzina-reci)
                            )]
-   (str osnova-reci-bez-a poslednje-slovo nastavak))
-  )
+   [(str osnova-reci-bez-a poslednje-slovo)
+    nastavak]))
 
 (defn nepostojano-a
   "НЕПОСТОЈАНО А
@@ -505,24 +546,27 @@
    "
   [rec
    nastavak]
-  (if (nepostojano-a? rec
-                      nastavak)
-   (nepostojano-a-transformacija (cstr/lower-case rec)
-                                 (cstr/lower-case nastavak))
-   (str rec nastavak))
+  (let [rec  (cstr/lower-case rec)
+        nastavak  (cstr/lower-case nastavak)]
+   (if (nepostojano-a? rec
+                       nastavak)
+    (nepostojano-a-transformacija rec
+                                  nastavak)
+    [rec
+     nastavak]))
   )
 
 (defn- prelazak-l-u-o-konkretna?
   ""
   [vektor-slogova
-   index-trenutnog-sloga]
+   indeks-trenutnog-sloga]
   (let [broj-slogova   (count vektor-slogova)]
-   (if (< index-trenutnog-sloga broj-slogova)
-    (let [trenutni-slog  (vektor-slogova index-trenutnog-sloga)]
+   (if (< indeks-trenutnog-sloga broj-slogova)
+    (let [trenutni-slog  (vektor-slogova indeks-trenutnog-sloga)]
      (if (= \л (last trenutni-slog))
       true
       (recur vektor-slogova
-             (inc index-trenutnog-sloga))
+             (inc indeks-trenutnog-sloga))
       ))
     false))
   )
@@ -537,21 +581,21 @@
   ""
   [vektor-slogova
    rezultat
-   trenutni-index]
+   trenutni-indeks]
   (let [broj-slogova   (count vektor-slogova)]
-   (if (< trenutni-index broj-slogova)
-    (let [trenutni-slog  (vektor-slogova trenutni-index)]
+   (if (< trenutni-indeks broj-slogova)
+    (let [trenutni-slog  (vektor-slogova trenutni-indeks)]
      (if (= \л (last trenutni-slog))
       (let [trenutni-slog  (cstr/replace trenutni-slog "л" "о")]
        (swap! rezultat str trenutni-slog)
        (recur vektor-slogova
               rezultat
-              (inc trenutni-index))
+              (inc trenutni-indeks))
         )
       (do (swap! rezultat str trenutni-slog)
           (recur vektor-slogova
                  rezultat
-                 (inc trenutni-index))
+                 (inc trenutni-indeks))
        ))
      )
     @rezultat))
@@ -583,47 +627,65 @@
     а не на крају слога,
     па није прешло у О."
   [rec
-   & opciono]
-  (if (prelazak-l-u-o? rec)
-   (prelazak-l-u-o-transformacija rec)
-   rec))
+   nastavak]
+  (let [rec  (cstr/lower-case rec)
+        nastavak  (cstr/lower-case nastavak)]
+   (if (prelazak-l-u-o? (str rec
+                             nastavak))
+    (let [upotrebljen-prelazak-l-u-o  (prelazak-l-u-o-transformacija (str rec
+                                                                          nastavak))
+          uklonjen-nastavak  (.substring upotrebljen-prelazak-l-u-o
+                                         0
+                                         (cstr/last-index-of upotrebljen-prelazak-l-u-o
+                                                             nastavak))]
+     [uklonjen-nastavak
+      nastavak])
+    [rec
+     nastavak]))
+  )
 
 (defn- jotovanje-a?
   ""
   [rec
    nastavak]
   (let [duzina-reci                 (count rec)
-        index-poslednjeg-slova      (dec duzina-reci)
-        poslednje-slovo-u-reci      (get rec index-poslednjeg-slova)
+        indeks-poslednjeg-slova      (dec duzina-reci)
+        poslednje-slovo-u-reci      (get rec indeks-poslednjeg-slova)
         prvo-slovo-nastavka         (first nastavak)]
    (and (= \ј prvo-slovo-nastavka)
-        (cstr/index-of nenepcani poslednje-slovo-u-reci))
+        (cstr/index-of nenepcani
+                       poslednje-slovo-u-reci))
    ))
 
 (defn- jotovanje-a-transformacija
   ""
   [rec
    nastavak]
-  (let [duzina-reci               (count rec)
-        index-poslednjeg-slova    (dec duzina-reci)
-        poslednje-slovo-u-reci    (get rec index-poslednjeg-slova)
-        rec-bez-poslednjeg-slova  (.substring rec 0 index-poslednjeg-slova)
-        duzina-nastavka           (count nastavak)
+  (let [duzina-reci  (count rec)
+        indeks-poslednjeg-slova  (dec duzina-reci)
+        poslednje-slovo-u-reci  (get rec
+                                     indeks-poslednjeg-slova)
+        rec-bez-poslednjeg-slova  (.substring rec
+                                              0
+                                              indeks-poslednjeg-slova)
+        duzina-nastavka  (count nastavak)
         nastavka-bez-prvog-slova  (if (< 1 duzina-nastavka)
-                                   (.substring nastavak 1 duzina-nastavka)
+                                   (.substring nastavak
+                                               1
+                                               duzina-nastavka)
                                    "")]
-   (str rec-bez-poslednjeg-slova
-        (promena-nenepcani-u-prednjonepcani poslednje-slovo-u-reci)
-        nastavka-bez-prvog-slova))
-  )
+   [(str rec-bez-poslednjeg-slova
+         (promena-nenepcani-u-prednjonepcani
+          poslednje-slovo-u-reci))
+    nastavka-bez-prvog-slova]))
 
 (defn- jotovanje-b?
   ""
   [rec
    nastavak]
   (let [duzina-reci                 (count rec)
-        index-poslednjeg-slova      (dec duzina-reci)
-        poslednje-slovo-u-reci      (get rec index-poslednjeg-slova)
+        indeks-poslednjeg-slova      (dec duzina-reci)
+        poslednje-slovo-u-reci      (get rec indeks-poslednjeg-slova)
         prvo-slovo-nastavka         (first nastavak)]
    (and (= \ј prvo-slovo-nastavka)
         (usneni? poslednje-slovo-u-reci))
@@ -637,10 +699,9 @@
         nastavka-bez-prvog-slova  (if (< 1 duzina-nastavka)
                                    (.substring nastavak 1 duzina-nastavka)
                                    "")]
-   (str rec
-        "љ"
-        nastavka-bez-prvog-slova))
-  )
+   [rec
+    (str \љ
+         nastavka-bez-prvog-slova)]))
 
 (defn jotovanje
   "ЈОТОВАЊЕ
@@ -663,50 +724,57 @@
     нема"
   [rec
    nastavak]
-  (if (jotovanje-a? rec
-                    nastavak)
-   (jotovanje-a-transformacija (cstr/lower-case rec)
-                               (cstr/lower-case nastavak))
-   (if (jotovanje-b? rec
+  (let [rec  (cstr/lower-case rec)
+        nastavak  (cstr/lower-case nastavak)]
+   (if (jotovanje-a? rec
                      nastavak)
-    (jotovanje-b-transformacija (cstr/lower-case rec)
-                                (cstr/lower-case nastavak))
-    (str rec nastavak))
+    (jotovanje-a-transformacija rec
+                                nastavak)
+    (if (jotovanje-b? rec
+                      nastavak)
+     (jotovanje-b-transformacija rec
+                                 nastavak)
+     [rec
+      nastavak]))
    ))
 
 (defn- gubljenje-suglasnika-a?
   ""
   [rec
    nastavak]
-  (let [duzina-reci                 (count rec)
-        index-poslednjeg-slova      (dec duzina-reci)
-        prvo-slovo-nastavka         (first nastavak)]
-   (= prvo-slovo-nastavka (get rec
-                               index-poslednjeg-slova))
-   ))
+  (let [duzina-reci  (count rec)
+        indeks-poslednjeg-slova  (dec duzina-reci)
+        prvo-slovo-nastavka  (first nastavak)
+        poslednje-slovo-reci  (get rec
+                                   indeks-poslednjeg-slova)]
+   (= prvo-slovo-nastavka
+      poslednje-slovo-reci))
+  )
 
 (defn- gubljenje-suglasnika-a-transformacija
   ""
   [rec
    nastavak]
   (let [duzina-reci                      (count rec)
-        index-poslednjeg-slova           (dec duzina-reci)
+        indeks-poslednjeg-slova           (dec duzina-reci)
         osnova-reci-bez-poslednjeg-slova (.substring rec
                                                      0
-                                                     index-poslednjeg-slova)]
-   (str osnova-reci-bez-poslednjeg-slova nastavak))
-  )
+                                                     indeks-poslednjeg-slova)]
+   [osnova-reci-bez-poslednjeg-slova
+    nastavak]))
 
 (defn- gubljenje-suglasnika-b?
   ""
   [rec
    nastavak]
   (let [duzina-reci             (count rec)
-        index-poslednjeg-slova  (dec duzina-reci)
-        poslednje-slovo-reci    (get rec index-poslednjeg-slova)
+        indeks-poslednjeg-slova  (dec duzina-reci)
+        poslednje-slovo-reci    (get rec indeks-poslednjeg-slova)
         prvo-slovo-nastavka     (first nastavak)]
-   (and (= poslednje-slovo-reci \т)
-        (cstr/index-of suglasnici prvo-slovo-nastavka))
+   (and (= poslednje-slovo-reci
+           \т)
+        (cstr/index-of suglasnici
+                       prvo-slovo-nastavka))
    ))
 
 (defn- gubljenje-suglasnika-b-transformacija
@@ -714,12 +782,12 @@
   [rec
    nastavak]
   (let [duzina-reci                      (count rec)
-        index-poslednjeg-slova           (dec duzina-reci)
+        indeks-poslednjeg-slova           (dec duzina-reci)
         osnova-reci-bez-poslednjeg-slova (.substring rec
                                                      0
-                                                     index-poslednjeg-slova)]
-   (str osnova-reci-bez-poslednjeg-slova nastavak))
-  )
+                                                     indeks-poslednjeg-slova)]
+   [osnova-reci-bez-poslednjeg-slova
+    nastavak]))
 
 (defn gubljenje-suglasnika
   "ГУБЉЕЊЕ СУГЛАСНИКА
@@ -748,48 +816,57 @@
     (фашиСТКиња)"
   [rec
    nastavak]
-  (if (gubljenje-suglasnika-a? rec
-                               nastavak)
-   (gubljenje-suglasnika-a-transformacija (cstr/lower-case rec)
-                                          (cstr/lower-case nastavak))
-   (if (gubljenje-suglasnika-b? rec
+  (let [rec  (cstr/lower-case rec)
+        nastavak  (cstr/lower-case nastavak)]
+   (if (gubljenje-suglasnika-a? rec
                                 nastavak)
-    (gubljenje-suglasnika-b-transformacija (cstr/lower-case rec)
-                                           (cstr/lower-case nastavak))
-    (str rec nastavak))
-   )
-  )
+    (gubljenje-suglasnika-a-transformacija rec
+                                           nastavak)
+    (if (gubljenje-suglasnika-b? rec
+                                 nastavak)
+     (gubljenje-suglasnika-b-transformacija rec
+                                            nastavak)
+     [rec
+      nastavak]))
+   ))
 
 (defn- palatalizacija-i-a?
   ""
   [rec
    nastavak]
-  (let [duzina-reci         (count rec)
-        index-poslednjeg    (dec duzina-reci)
-        poslednje-slovo     (get rec
-                                 index-poslednjeg)
-        nastavak-prvo-slovo (first nastavak)]
-   (and (cstr/index-of zadnjonepcani poslednje-slovo)
-        (cstr/index-of "аеи" nastavak-prvo-slovo))
+  (let [duzina-reci  (count rec)
+        indeks-poslednjeg  (dec duzina-reci)
+        poslednje-slovo  (get rec
+                              indeks-poslednjeg)
+        predposlednje-slovo  (get rec
+                                  (dec indeks-poslednjeg))
+        izmenjeno-slovo  (palatalizacija-i-a-izmena-slova
+                          poslednje-slovo)
+        nastavak-prvo-slovo  (first nastavak)]
+   (and (cstr/index-of zadnjonepcani
+                       poslednje-slovo)
+        (cstr/index-of "аеи"
+                       nastavak-prvo-slovo)
+        (not= izmenjeno-slovo
+              predposlednje-slovo))
    ))
 
 (defn- palatalizacija-i-a-transformacija
   ""
   [rec
    nastavak]
-  (let [duzina-reci              (count rec)
-        index-poslednjeg         (dec duzina-reci)
-        poslednje-slovo          (get rec
-                                      index-poslednjeg)
-        rec-bez-poslednjeg-slova (.substring rec
-                                             0
-                                             index-poslednjeg)]
-   (case poslednje-slovo
-    \к (str rec-bez-poslednjeg-slova "ч" nastavak)
-    \г (str rec-bez-poslednjeg-slova "ж" nastavak)
-    \х (str rec-bez-poslednjeg-slova "ш" nastavak)
-    nil))
-  )
+  (let [duzina-reci  (count rec)
+        indeks-poslednjeg  (dec duzina-reci)
+        poslednje-slovo  (get rec
+                              indeks-poslednjeg)
+        rec-bez-poslednjeg-slova  (.substring rec
+                                              0
+                                              indeks-poslednjeg)
+        izmenjeno-slovo  (palatalizacija-i-a-izmena-slova
+                          poslednje-slovo)]
+   [(str rec-bez-poslednjeg-slova
+         izmenjeno-slovo)
+    nastavak]))
 
 (defn palatalizacija-i-a
   "ПАЛАТАЛИЗАЦИЈА (I)
@@ -816,11 +893,14 @@
     =ОлГИн, МеХ+Ин=МеХИн)"
   [rec
    nastavak]
-  (if (palatalizacija-i-a? rec
-                           nastavak)
-   (palatalizacija-i-a-transformacija (cstr/lower-case rec)
-                                      (cstr/lower-case nastavak))
-   (str rec nastavak))
+  (let [rec  (cstr/lower-case rec)
+        nastavak  (cstr/lower-case nastavak)]
+   (if (palatalizacija-i-a? rec
+                            nastavak)
+    (palatalizacija-i-a-transformacija rec
+                                       nastavak)
+    [rec
+     nastavak]))
   )
 
 (defn- palatalizacija-i-b?
@@ -828,12 +908,20 @@
   [rec
    nastavak]
   (let [duzina-reci         (count rec)
-        index-poslednjeg    (dec duzina-reci)
+        indeks-poslednjeg    (dec duzina-reci)
         poslednje-slovo     (get rec
-                                 index-poslednjeg)
+                                 indeks-poslednjeg)
+        predposlednje-slovo  (get rec
+                                  (dec indeks-poslednjeg))
+        izmenjeno-slovo  (palatalizacija-i-b-izmena-slova
+                          poslednje-slovo)
         nastavak-prvo-slovo (first nastavak)]
    (and (cstr/index-of "цз" poslednje-slovo)
-        (cstr/index-of "еи" nastavak-prvo-slovo))
+        (not= nil
+              nastavak-prvo-slovo)
+        (cstr/index-of "еи" nastavak-prvo-slovo)
+        (not= izmenjeno-slovo
+              predposlednje-slovo))
    ))
 
 (defn- palatalizacija-i-b-transformacija
@@ -841,17 +929,17 @@
   [rec
    nastavak]
   (let [duzina-reci              (count rec)
-        index-poslednjeg         (dec duzina-reci)
+        indeks-poslednjeg         (dec duzina-reci)
         poslednje-slovo          (get rec
-                                      index-poslednjeg)
+                                      indeks-poslednjeg)
         rec-bez-poslednjeg-slova (.substring rec
                                              0
-                                             index-poslednjeg)]
-   (case poslednje-slovo
-    \ц (str rec-bez-poslednjeg-slova "ч" nastavak)
-    \з (str rec-bez-poslednjeg-slova "ж" nastavak)
-    nil))
-  )
+                                             indeks-poslednjeg)
+        izmenjeno-slovo  (palatalizacija-i-b-izmena-slova
+                          poslednje-slovo)]
+   [(str rec-bez-poslednjeg-slova
+         izmenjeno-slovo)
+    nastavak]))
 
 (defn palatalizacija-i-b
   "ПАЛАТАЛИЗАЦИЈА (I)
@@ -866,11 +954,14 @@
     нема"
   [rec
    nastavak]
-  (if (palatalizacija-i-b? rec
-                           nastavak)
-   (palatalizacija-i-b-transformacija (cstr/lower-case rec)
-                                      (cstr/lower-case nastavak))
-   (str rec nastavak))
+  (let [rec  (cstr/lower-case rec)
+        nastavak  (cstr/lower-case nastavak)]
+   (if (palatalizacija-i-b? rec
+                            nastavak)
+    (palatalizacija-i-b-transformacija rec
+                                       nastavak)
+    [rec
+     nastavak]))
   )
 
 (defn- palatalizacija-ii?
@@ -878,12 +969,18 @@
   [rec
    nastavak]
   (let [duzina-reci         (count rec)
-        index-poslednjeg    (dec duzina-reci)
+        indeks-poslednjeg    (dec duzina-reci)
         poslednje-slovo     (get rec
-                                 index-poslednjeg)
+                                 indeks-poslednjeg)
+        predposlednje-slovo  (get rec
+                                  (dec indeks-poslednjeg))
+        izmenjeno-slovo  (palatalizacija-ii-izmena-slova
+                          poslednje-slovo)
         nastavak-prvo-slovo (first nastavak)]
    (and (cstr/index-of zadnjonepcani poslednje-slovo)
-        (= \и nastavak-prvo-slovo))
+        (= \и nastavak-prvo-slovo)
+        (not= izmenjeno-slovo
+              predposlednje-slovo))
    ))
 
 (defn- palatalizacija-ii-transformacija
@@ -891,18 +988,17 @@
   [rec
    nastavak]
   (let [duzina-reci              (count rec)
-        index-poslednjeg         (dec duzina-reci)
+        indeks-poslednjeg         (dec duzina-reci)
         poslednje-slovo          (get rec
-                                      index-poslednjeg)
+                                      indeks-poslednjeg)
         rec-bez-poslednjeg-slova (.substring rec
                                              0
-                                             index-poslednjeg)]
-   (case poslednje-slovo
-    \к (str rec-bez-poslednjeg-slova "ц" nastavak)
-    \г (str rec-bez-poslednjeg-slova "з" nastavak)
-    \х (str rec-bez-poslednjeg-slova "с" nastavak)
-    nil))
-  )
+                                             indeks-poslednjeg)
+        izmenjeno-slovo  (palatalizacija-ii-izmena-slova
+                          poslednje-slovo)]
+   [(str rec-bez-poslednjeg-slova
+         izmenjeno-slovo)
+    nastavak]))
 
 (defn palatalizacija-ii
   "ПАЛАТАЛИЗАЦИЈА (II)
@@ -931,20 +1027,22 @@
     гласило баЦи...)"
   [rec
    nastavak]
-  (if (palatalizacija-ii? rec
-                          nastavak)
-   (palatalizacija-ii-transformacija (cstr/lower-case rec)
-                                     (cstr/lower-case nastavak))
-   (str rec
-        nastavak))
+  (let [rec  (cstr/lower-case rec)
+        nastavak  (cstr/lower-case nastavak)]
+   (if (palatalizacija-ii? rec
+                           nastavak)
+    (palatalizacija-ii-transformacija rec
+                                      nastavak)
+    [rec
+     nastavak]))
   )
 
 (defn- jspmt-a?
   ""
   [rec
    nastavak]
-  (let [index-poslednjeg  (dec (count rec))
-        poslednje-slovo-reci  (get rec index-poslednjeg)
+  (let [indeks-poslednjeg  (dec (count rec))
+        poslednje-slovo-reci  (get rec indeks-poslednjeg)
         prvo-slovo-nastavka  (first nastavak)]
    (and (or (= \с poslednje-slovo-reci)
             (= \з poslednje-slovo-reci))
@@ -955,20 +1053,22 @@
   ""
   [rec
    nastavak]
-  (let [index-poslednjeg  (dec (count rec))
-        poslednje-slovo-reci  (get rec index-poslednjeg)
+  (let [indeks-poslednjeg  (dec (count rec))
+        poslednje-slovo-reci  (get rec indeks-poslednjeg)
         rec-bez-poslednjeg-slova (.substring rec
                                              0
-                                             index-poslednjeg)]
+                                             indeks-poslednjeg)]
    (case poslednje-slovo-reci
-    \с  (str rec-bez-poslednjeg-slova \ш nastavak)
-    \з  (str rec-bez-poslednjeg-slova \ж nastavak)
-    (str rec
-         nastavak))
-   ))
+    \с  [(str rec-bez-poslednjeg-slova \ш)
+         nastavak]
+    \з  [(str rec-bez-poslednjeg-slova \ж)
+         nastavak]
+    [rec
+     nastavak]))
+  )
 
 (defn jspmt-a
-  "ЈЕДНАЧЕЊЕ ПО МЕСТУ ТВОРБЕ (ЈСПМТ)
+  "ЈЕДНАЧЕЊЕ СУГЛАСНИКА ПО МЕСТУ ТВОРБЕ (ЈСПМТ)
    а) Зубни С и З прелазе у
    предњонепчане (\"кукичаве\")
    Ш и Ж испред предњонепча-
@@ -990,20 +1090,22 @@
     раЗ+Љутити=раЗљутити)."
   [rec
    nastavak]
-  (if (jspmt-a? rec
-                nastavak)
-   (jspmt-a-transformacija (cstr/lower-case rec)
-                           (cstr/lower-case nastavak))
-   (str rec
-        nastavak))
+  (let [rec  (cstr/lower-case rec)
+        nastavak  (cstr/lower-case nastavak)]
+   (if (jspmt-a? rec
+                 nastavak)
+    (jspmt-a-transformacija rec
+                            nastavak)
+    [rec
+     nastavak]))
   )
 
 (defn- jspmt-b?
   ""
   [rec
    nastavak]
-  (let [index-poslednjeg  (dec (count rec))
-        poslednje-slovo-reci  (get rec index-poslednjeg)
+  (let [indeks-poslednjeg  (dec (count rec))
+        poslednje-slovo-reci  (get rec indeks-poslednjeg)
         prvo-slovo-nastavka  (first nastavak)]
    (and (= \н poslednje-slovo-reci)
         (usneni? prvo-slovo-nastavka))
@@ -1013,15 +1115,15 @@
   ""
   [rec
    nastavak]
-  (let [index-poslednjeg  (dec (count rec))
+  (let [indeks-poslednjeg  (dec (count rec))
         rec-bez-poslednjeg-slova (.substring rec
                                              0
-                                             index-poslednjeg)]
-   (str rec-bez-poslednjeg-slova \м nastavak))
-  )
+                                             indeks-poslednjeg)]
+   [(str rec-bez-poslednjeg-slova \м)
+    nastavak]))
 
 (defn jspmt-b
-  "ЈЕДНАЧЕЊЕ ПО МЕСТУ ТВОРБЕ (ЈСПМТ)
+  "ЈЕДНАЧЕЊЕ СУГЛАСНИКА ПО МЕСТУ ТВОРБЕ (ЈСПМТ)
    б) Н испред уснених
    (углавном Б) прелазе у М.
    
@@ -1039,55 +1141,58 @@
     (једаН+Пут=једаНпут)."
   [rec
    nastavak]
-  (if (jspmt-b? rec
-                nastavak)
-   (jspmt-b-transformacija (cstr/lower-case rec)
-                           (cstr/lower-case nastavak))
-   (str (cstr/lower-case rec)
-        (cstr/lower-case nastavak))
-   ))
+  (let [rec  (cstr/lower-case rec)
+        nastavak  (cstr/lower-case nastavak)]
+   (if (jspmt-b? rec
+                 nastavak)
+    (jspmt-b-transformacija rec
+                            nastavak)
+    [rec
+     nastavak]))
+  )
 
 (defn- jspz?
   ""
   [rec
    nastavak]
-  (let [poslednje-slovo-reci  (get rec (dec (count rec))
-                               )
-        prvo-slovo-nastavka  (get nastavak 0)
+  (let [indeks-poslednjeg-slova  (dec (count rec))
+        poslednje-slovo-reci  (get rec indeks-poslednjeg-slova)
+        predposlednje-slovo-reci  (get rec (dec indeks-poslednjeg-slova))
         poslednje-slovo-reci-zvucno  (zvucno? poslednje-slovo-reci)
-        prvo-slovo-nastavka-zvucno  (zvucno? prvo-slovo-nastavka)]
-   (if (or (and (not poslednje-slovo-reci-zvucno)
-                (not prvo-slovo-nastavka-zvucno))
-           (and (number? poslednje-slovo-reci-zvucno)
-                (number? prvo-slovo-nastavka-zvucno)))
-    false
-    true))
+        predposlednje-slovo-reci-zvucno  (zvucno? predposlednje-slovo-reci)
+        poslednje-slovo-reci-bezvucno  (bezvucno? poslednje-slovo-reci)
+        predposlednje-slovo-reci-bezvucno  (bezvucno? predposlednje-slovo-reci)]
+   (or (and (number? predposlednje-slovo-reci-bezvucno)
+            (number? poslednje-slovo-reci-zvucno))
+       (and (number? predposlednje-slovo-reci-zvucno)
+            (number? poslednje-slovo-reci-bezvucno))
+    ))
   )
 
 (defn- jspz-transformacija
   ""
   [rec
    nastavak]
-  (let [index-poslednjeg-slova  (dec (count rec))
-        poslednje-slovo-reci  (get rec index-poslednjeg-slova)
-        prvo-slovo-nastavka  (get nastavak 0)
-        prvo-slovo-nastavka-zvucno  (zvucno? prvo-slovo-nastavka)
-        rec-bez-poslednjeg-slova  (.substring rec 0 index-poslednjeg-slova)
-        izmenjeno-slovo  (if prvo-slovo-nastavka-zvucno
-                          (promena-zvucni-u-bezvucni-i-obratno poslednje-slovo-reci
+  (let [indeks-poslednjeg-slova  (dec (count rec))
+        poslednje-slovo-reci  (get rec indeks-poslednjeg-slova)
+        predposlednje-slovo-reci  (get rec (dec indeks-poslednjeg-slova))
+        poslednje-slovo-reci-zvucno  (zvucno? poslednje-slovo-reci)
+        rec-bez-poslednja-dva-slova  (.substring rec 0 (dec indeks-poslednjeg-slova))
+        izmenjeno-slovo  (if poslednje-slovo-reci-zvucno
+                          (promena-zvucni-u-bezvucni-i-obratno predposlednje-slovo-reci
                                                                bezvucni
                                                                zvucni)
-                          (promena-zvucni-u-bezvucni-i-obratno poslednje-slovo-reci
+                          (promena-zvucni-u-bezvucni-i-obratno predposlednje-slovo-reci
                                                                zvucni
                                                                bezvucni))]
    
-   (str rec-bez-poslednjeg-slova
-        izmenjeno-slovo
-        nastavak))
-  )
+   [(str rec-bez-poslednja-dva-slova
+         izmenjeno-slovo
+         poslednje-slovo-reci)
+    nastavak]))
 
 (defn jspz
-  "ЈЕДНАЧЕЊЕ
+  "ЈЕДНАЧЕЊЕ СУГЛАСНИКА
    ПО ЗВУЧНОСТИ
    (ЈСПЗ)
    
@@ -1118,10 +1223,25 @@
     се не врши."
   [rec
    nastavak]
-  (if (jspz? rec nastavak)
-   (jspz-transformacija (cstr/lower-case rec)
-                        (cstr/lower-case nastavak))
-   (str (cstr/lower-case rec)
-        (cstr/lower-case nastavak))
-   ))
+  (let [rec  (cstr/lower-case rec)
+        nastavak  (cstr/lower-case nastavak)]
+   (if (jspz? rec
+              nastavak)
+    (jspz-transformacija rec
+                         nastavak)
+    [rec
+     nastavak]))
+  )
+
+(def vektor-glasovnih-promena
+  [nepostojano-a
+   prelazak-l-u-o
+   jotovanje
+   gubljenje-suglasnika
+   palatalizacija-i-a
+   palatalizacija-i-b
+   palatalizacija-ii
+   jspmt-a
+   jspmt-b
+   jspz])
 

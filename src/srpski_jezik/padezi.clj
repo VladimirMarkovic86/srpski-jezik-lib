@@ -1,22 +1,123 @@
 (ns srpski-jezik.padezi
   (:require [srpski-jezik.glasovne-promene :as gp]
             [srpski-jezik.pismo :as p]
+            [srpski-jezik.luc :as luc]
             [clojure.string :as cstr]))
 
  ; 70 стр. 1. ПОДЕЛА ИМЕНИЦА ПРЕМА ЗНАЧЕЊУ
 
-(defn izmena-po-zvucnosti
+(defn sagradi-novu-rec-konkretna
   ""
-  []
-  
-  )
+  [rec
+   nastavak
+   vektor-glasovnih-promena
+   index-trenutne-promene]
+  (let [broj-glasovnih-promeni  (count vektor-glasovnih-promena)]
+   (if (< index-trenutne-promene
+          broj-glasovnih-promeni)
+    (let [[osnova-nakon-glasovne-promene
+           nastavak-nakon-glasovne-promene]  ((vektor-glasovnih-promena
+                                               index-trenutne-promene)
+                                              rec
+                                              nastavak)]
+;      (println osnova-nakon-glasovne-promene "\n"
+;               nastavak-nakon-glasovne-promene "\n"
+;               (str (vektor-glasovnih-promena
+;                     index-trenutne-promene))
+;       )
+      (recur osnova-nakon-glasovne-promene
+             nastavak-nakon-glasovne-promene
+             vektor-glasovnih-promena
+             (inc index-trenutne-promene))
+     )
+    (str rec
+         nastavak))
+   ))
+
+(defn sagradi-novu-rec
+  ""
+  [rec
+   nastavak]
+  (sagradi-novu-rec-konkretna rec
+                              nastavak
+                              gp/vektor-glasovnih-promena
+                              0))
 
 (defn transformisi-rec
   ""
   [rec
    nastavak]
+  (let [uklonjen-samoglasnik-na-kraju  (gp/ukloni-samoglasnik-na-kraju rec)
+        transformisana-rec  (sagradi-novu-rec uklonjen-samoglasnik-na-kraju
+                                              nastavak)]
+   transformisana-rec))
+
+(defn transformisi-imenicu
+  ""
+  [rec
+   padez
+   gramaticki-rod
+   prirodni-rod
+   znacenje ; биће или предмет
+   broj ; једнина или множина
+   vrsta-imenice
+   ]
   
   )
+
+(defn transformisi-pridev
+  ""
+  [rec
+   imenicki-padez
+   imenicki-rod
+   znacenje ; биће или предмет
+   број ; једнина или множина
+   vrsta-prideva
+   ]
+  
+  )
+
+(defn transformisi-zamenicu
+  ""
+  [rec
+   imenicki-padez
+   imenicki-rod
+   znacenje ; биће или предмет
+   број ; једнина или множина
+   vrsta-zamenice
+   rod-zamenice
+   broj zamenice
+   ]
+  
+  )
+
+(defn transformisi-broj
+  ""
+  [broj
+   rod
+   vrsta-broja]
+  
+  )
+
+(defn transformisi-glagol
+  ""
+  [rec
+   lice
+   broj
+   rod
+   vrsta-glagola
+   glagolski-oblik
+   ]
+  
+  )
+
+(def nominativ "номинатив")
+(def genitiv "генитив")
+(def dativ "датив")
+(def akuzativ "акузатив")
+(def vokativ "вокатив")
+(def instrumental "инструментал")
+(def lokativ "локатив")
 
 (def rod-muski "мушки")
 
@@ -34,7 +135,36 @@
 
 (def broj-mnozina "множина")
 
+(def imenica "именица")
+
+(def imenica-vlastita (str imenica " властита"))
+
+(def imenica-vlastita-imena-ljudi (str imenica-vlastita " имена људи"))
+
+(def imenica-vlastita-imena-zivotinja (str imenica-vlastita " имена животиња"))
+
+(def imenica-vlastita-imena-geografskih-pojmova (str imenica-vlastita " имена географских појмова"))
+
+(def imenica-vlastita-imena-nebeskih-tela (str imenica-vlastita " имена небеских тела"))
+
+(def imenica-zajednicka (str imenica " заједничка"))
+
+(def imenica-zbirne (str imenica " збирна"))
+
+(def imenica-gradivna (str imenica " градивна"))
+
+(def imenica-pluralia-tantum (str imenica " pluralia tantum"))
+
+(def imenica-misaona (str imenica " мисаона"))
+
+(def imenica-misaona-osecanje (str imenica-misaona " осећање"))
+
+(def imenica-misaona-osobina (str imenica-misaona " особина"))
+
+(def imenica-misaona-radnja-ili-stanje (str imenica-misaona " радња или стање"))     
+
 (def reci-muskog-roda-bica [{:rec  "отац"
+                             :vrsta-reci  imenica-zajednicka
                              :prirodni-rod  rod-muski
                              :gramaticki-rod  rod-muski
                              :znacenje  znacenje-bice
@@ -42,6 +172,7 @@
                              :jednina  "отац"
                              :mnozina  "очеви"}
                             {:rec  "син"
+                             :vrsta-reci  imenica-zajednicka
                              :prirodni-rod  rod-muski
                              :gramaticki-rod  rod-muski
                              :znacenje  znacenje-bice
@@ -49,6 +180,7 @@
                              :jednina  "син"
                              :mnozina  "синови"}
                             {:rec  "брат"
+                             :vrsta-reci  imenica-zajednicka
                              :prirodni-rod  rod-muski
                              :gramaticki-rod  rod-muski
                              :znacenje  znacenje-bice
@@ -56,13 +188,15 @@
                              :jednina  "брат"
                              :mnozina  "браћа"}
                             {:rec  "дед"
+                             :vrsta-reci  imenica-zajednicka
                              :prirodni-rod  rod-muski
                              :gramaticki-rod  rod-muski
                              :znacenje  znacenje-bice
                              :broj  broj-jednina
                              :jednina  "дед"
-                             :mnozina  "деде"}
+                             :mnozina  "дедови"}
                             {:rec  "учитељ"
+                             :vrsta-reci  imenica-zajednicka
                              :prirodni-rod  rod-muski
                              :gramaticki-rod  rod-muski
                              :znacenje  znacenje-bice
@@ -70,6 +204,7 @@
                              :jednina  "учитељ"
                              :mnozina  "учитељи"}
                             {:rec  "коњ"
+                             :vrsta-reci  imenica-zajednicka
                              :prirodni-rod  rod-muski
                              :gramaticki-rod  rod-muski
                              :znacenje  znacenje-bice
@@ -77,6 +212,7 @@
                              :jednina  "коњ"
                              :mnozina  "коњи"}
                             {:rec  "вук"
+                             :vrsta-reci  imenica-zajednicka
                              :prirodni-rod  rod-muski
                              :gramaticki-rod  rod-muski
                              :znacenje  znacenje-bice
@@ -84,14 +220,48 @@
                              :jednina  "вук"
                              :mnozina  "вукови"}
                             {:rec  "лав"
+                             :vrsta-reci  imenica-zajednicka
                              :prirodni-rod  rod-muski
                              :gramaticki-rod  rod-muski
                              :znacenje  znacenje-bice
                              :broj  broj-jednina
                              :jednina  "лав"
-                             :mnozina  "лавови"}])
+                             :mnozina  "лавови"}
+                            {:rec  "Петар"
+                             :vrsta-reci  imenica-vlastita-imena-ljudi
+                             :prirodni-rod  rod-muski
+                             :gramaticki-rod  rod-muski
+                             :znacenje  znacenje-bice
+                             :broj  broj-jednina
+                             :jednina  "Петар"
+                             :mnozina  nil}
+                            {:rec  "Иван"
+                             :vrsta-reci  imenica-vlastita-imena-ljudi
+                             :prirodni-rod  rod-muski
+                             :gramaticki-rod  rod-muski
+                             :znacenje  znacenje-bice
+                             :broj  broj-jednina
+                             :jednina  "Иван"
+                             :mnozina  nil}
+                            {:rec  "Јаблан"
+                             :vrsta-reci  imenica-vlastita-imena-zivotinja
+                             :prirodni-rod  rod-muski
+                             :gramaticki-rod  rod-muski
+                             :znacenje  znacenje-bice
+                             :broj  broj-jednina
+                             :jednina  "Јаблан"
+                             :mnozina  nil}
+                            {:rec  "Ждралин"
+                             :vrsta-reci  imenica-vlastita-imena-zivotinja
+                             :prirodni-rod  rod-muski
+                             :gramaticki-rod  rod-muski
+                             :znacenje  znacenje-bice
+                             :broj  broj-jednina
+                             :jednina  "Ждралин"
+                             :mnozina  nil}])
 
 (def reci-zenskog-roda-bica [{:rec  "жена"
+                              :vrsta-reci  imenica-zajednicka
                               :prirodni-rod  rod-zenski
                               :gramaticki-rod  rod-zenski
                               :znacenje  znacenje-bice
@@ -99,6 +269,7 @@
                               :jednina  "жена"
                               :mnozina  "жене"}
                              {:rec  "мајка"
+                              :vrsta-reci  imenica-zajednicka
                               :prirodni-rod  rod-zenski
                               :gramaticki-rod  rod-zenski
                               :znacenje  znacenje-bice
@@ -106,6 +277,7 @@
                               :jednina  "мајка"
                               :mnozina  "мајке"}
                              {:rec  "сестра"
+                              :vrsta-reci  imenica-zajednicka
                               :prirodni-rod  rod-zenski
                               :gramaticki-rod  rod-zenski
                               :znacenje  znacenje-bice
@@ -113,12 +285,14 @@
                               :jednina  "сестра"
                               :mnozina  "сестре"}
                              {:rec  "баба"
+                              :vrsta-reci  imenica-zajednicka
                               :prirodni-rod  rod-zenski
                               :gramaticki-rod  rod-zenski
                               :broj  broj-jednina
                               :jednina  "баба"
                               :mnozina  "бабе"}
                              {:rec  "учитељица"
+                              :vrsta-reci  imenica-zajednicka
                               :prirodni-rod  rod-zenski
                               :gramaticki-rod  rod-zenski
                               :znacenje  znacenje-bice
@@ -126,6 +300,7 @@
                               :jednina  "учитељица"
                               :mnozina  "учитељице"}
                              {:rec  "вучица"
+                              :vrsta-reci  imenica-zajednicka
                               :prirodni-rod  rod-zenski
                               :gramaticki-rod  rod-zenski
                               :znacenje  znacenje-bice
@@ -133,6 +308,7 @@
                               :jednina  "вучица"
                               :mnozina  "вучице"}
                              {:rec  "крава"
+                              :vrsta-reci  imenica-zajednicka
                               :prirodni-rod  rod-zenski
                               :gramaticki-rod  rod-zenski
                               :znacenje  znacenje-bice
@@ -140,6 +316,7 @@
                               :jednina  "крава"
                               :mnozina  "краве"}
                              {:rec  "кокошка"
+                              :vrsta-reci  imenica-zajednicka
                               :prirodni-rod  rod-zenski
                               :gramaticki-rod  rod-zenski
                               :znacenje  znacenje-bice
@@ -147,6 +324,7 @@
                               :jednina  "кокошка"
                               :mnozina  "кокошке"}
                              {:rec  "тата"
+                              :vrsta-reci  imenica-zajednicka
                               :prirodni-rod  rod-muski
                               :gramaticki-rod  rod-zenski
                               :znacenje  znacenje-bice
@@ -154,6 +332,7 @@
                               :jednina  "тата"
                               :mnozina  "тате"}
                              {:rec  "деда"
+                              :vrsta-reci  imenica-zajednicka
                               :prirodni-rod  rod-muski
                               :gramaticki-rod  rod-zenski
                               :znacenje  znacenje-bice
@@ -161,6 +340,7 @@
                               :jednina  "деда"
                               :mnozina  "деде"}
                              {:rec  "владика"
+                              :vrsta-reci  imenica-zajednicka
                               :prirodni-rod  rod-muski
                               :gramaticki-rod  rod-zenski
                               :znacenje  znacenje-bice
@@ -168,6 +348,7 @@
                               :jednina  "владика"
                               :mnozina  "владике"}
                              {:rec  "судија"
+                              :vrsta-reci  imenica-zajednicka
                               :prirodni-rod  rod-muski
                               :gramaticki-rod  rod-zenski
                               :znacenje  znacenje-bice
@@ -175,14 +356,32 @@
                               :jednina  "судија"
                               :mnozina  "судије"}
                              {:rec  "ага"
+                              :vrsta-reci  imenica-zajednicka
                               :prirodni-rod  rod-muski
                               :gramaticki-rod  rod-zenski
                               :znacenje  znacenje-bice
                               :broj  broj-jednina
                               :jednina  "ага"
-                              :mnozina  "ага"}])
+                              :mnozina  "аге"}
+                             {:rec  "Никола"
+                              :vrsta-reci  imenica-vlastita-imena-ljudi
+                              :prirodni-rod  rod-muski
+                              :gramaticki-rod  rod-zenski
+                              :znacenje  znacenje-bice
+                              :broj  broj-jednina
+                              :jednina  "Никола"
+                              :mnozina  nil}
+                             {:rec  "Зорица"
+                              :vrsta-reci  imenica-vlastita-imena-ljudi
+                              :prirodni-rod  rod-zenski
+                              :gramaticki-rod  rod-zenski
+                              :znacenje  znacenje-bice
+                              :broj  broj-jednina
+                              :jednina  "Зорица"
+                              :mnozina  nil}])
 
 (def reci-srednjeg-roda-bica [{:rec  "дете"
+                               :vrsta-reci  imenica-zajednicka
                                :prirodni-rod  rod-srednji
                                :gramaticki-rod  rod-srednji
                                :znacenje  znacenje-bice
@@ -190,6 +389,7 @@
                                :jednina  "дете"
                                :mnozina  "деца"}
                               {:rec  "теле"
+                               :vrsta-reci  imenica-zajednicka
                                :prirodni-rod  rod-srednji
                                :gramaticki-rod  rod-srednji
                                :znacenje  znacenje-bice
@@ -197,6 +397,7 @@
                                :jednina  "теле"
                                :mnozina  "телад"}
                               {:rec  "пиле"
+                               :vrsta-reci  imenica-zajednicka
                                :prirodni-rod  rod-srednji
                                :gramaticki-rod  rod-srednji
                                :znacenje  znacenje-bice
@@ -204,6 +405,7 @@
                                :jednina  "пиле"
                                :mnozina  "пилићи"}
                               {:rec  "маче"
+                               :vrsta-reci  imenica-zajednicka
                                :prirodni-rod  rod-srednji
                                :gramaticki-rod  rod-srednji
                                :znacenje  znacenje-bice
@@ -211,6 +413,7 @@
                                :jednina  "маче"
                                :mnozina  "мачићи"}
                               {:rec  "чедо"
+                               :vrsta-reci  imenica-zajednicka
                                :prirodni-rod  rod-srednji
                                :gramaticki-rod  rod-srednji
                                :znacenje  znacenje-bice
@@ -218,6 +421,7 @@
                                :jednina  "чедо"
                                :mnozina  "чеда"}
                               {:rec  "Марко"
+                               :vrsta-reci  imenica-vlastita-imena-ljudi
                                :prirodni-rod  rod-muski
                                :gramaticki-rod  rod-srednji
                                :znacenje  znacenje-bice
@@ -225,6 +429,7 @@
                                :jednina  "Марко"
                                :mnozina  nil}
                               {:rec  "Иво"
+                               :vrsta-reci  imenica-vlastita-imena-ljudi
                                :prirodni-rod  rod-muski
                                :gramaticki-rod  rod-srednji
                                :znacenje  znacenje-bice
@@ -232,6 +437,7 @@
                                :jednina  "Иво"
                                :mnozina  nil}
                               {:rec  "Перо"
+                               :vrsta-reci  imenica-vlastita-imena-ljudi
                                :prirodni-rod  rod-muski
                                :gramaticki-rod  rod-srednji
                                :znacenje  znacenje-bice
@@ -239,6 +445,7 @@
                                :jednina  "Перо"
                                :mnozina  nil}
                               {:rec  "Радоје"
+                               :vrsta-reci  imenica-vlastita-imena-ljudi
                                :prirodni-rod  rod-muski
                                :gramaticki-rod  rod-srednji
                                :znacenje  znacenje-bice
@@ -246,6 +453,7 @@
                                :jednina  "Радоје"
                                :mnozina  nil}
                               {:rec  "Миле"
+                               :vrsta-reci  imenica-vlastita-imena-ljudi
                                :prirodni-rod  rod-muski
                                :gramaticki-rod  rod-srednji
                                :znacenje  znacenje-bice
@@ -253,14 +461,40 @@
                                :jednina  "Миле"
                                :mnozina  nil}
                               {:rec  "Спасоје"
+                               :vrsta-reci  imenica-vlastita-imena-ljudi
                                :prirodni-rod  rod-muski
                                :gramaticki-rod  rod-srednji
                                :znacenje  znacenje-bice
                                :broj  broj-jednina
                                :jednina  "Спасоје"
+                               :mnozina  nil}
+                              {:rec  "Славко"
+                               :vrsta-reci  imenica-vlastita-imena-ljudi
+                               :prirodni-rod  rod-muski
+                               :gramaticki-rod  rod-srednji
+                               :znacenje  znacenje-bice
+                               :broj  broj-jednina
+                               :jednina  "Славко"
+                               :mnozina  nil}
+                              {:rec  "Михаило"
+                               :vrsta-reci  imenica-vlastita-imena-ljudi
+                               :prirodni-rod  rod-muski
+                               :gramaticki-rod  rod-srednji
+                               :znacenje  znacenje-bice
+                               :broj  broj-jednina
+                               :jednina  "Михаило"
+                               :mnozina  nil}
+                              {:rec  "Сивко"
+                               :vrsta-reci  imenica-vlastita-imena-zivotinja
+                               :prirodni-rod  rod-muski
+                               :gramaticki-rod  rod-srednji
+                               :znacenje  znacenje-bice
+                               :broj  broj-jednina
+                               :jednina  "Сивко"
                                :mnozina  nil}])
 
 (def reci-muskog-roda-predmeti [{:rec  "зид"
+                                 :vrsta-reci  imenica-gradivna
                                  :prirodni-rod  rod-muski
                                  :gramaticki-rod  rod-muski
                                  :znacenje  znacenje-predmet
@@ -268,6 +502,7 @@
                                  :jednina  "зид"
                                  :mnozina  "зидови"}
                                 {:rec  "камен"
+                                 :vrsta-reci  imenica-gradivna
                                  :prirodni-rod  rod-muski
                                  :gramaticki-rod  rod-muski
                                  :znacenje  znacenje-predmet
@@ -275,6 +510,7 @@
                                  :jednina  "камен"
                                  :mnozina  "камење"}
                                 {:rec  "храст"
+                                 :vrsta-reci  imenica-zajednicka
                                  :prirodni-rod  rod-muski
                                  :gramaticki-rod  rod-muski
                                  :znacenje  znacenje-predmet
@@ -282,6 +518,7 @@
                                  :jednina  "храст"
                                  :mnozina  "храстови"}
                                 {:rec  "ноћ"
+                                 :vrsta-reci  imenica-zajednicka
                                  :prirodni-rod  rod-zenski
                                  :gramaticki-rod  rod-muski
                                  :znacenje  znacenje-predmet
@@ -289,6 +526,7 @@
                                  :jednina  "ноћ"
                                  :mnozina  "ноћи"}
                                 {:rec  "ствар"
+                                 :vrsta-reci  imenica-zajednicka
                                  :prirodni-rod  rod-zenski
                                  :gramaticki-rod  rod-muski
                                  :znacenje  znacenje-predmet
@@ -296,6 +534,7 @@
                                  :jednina  "ствар"
                                  :mnozina  "ствари"}
                                 {:rec  "љубав"
+                                 :vrsta-reci  imenica-misaona-osecanje
                                  :prirodni-rod  rod-zenski
                                  :gramaticki-rod  rod-muski
                                  :znacenje  znacenje-predmet
@@ -303,6 +542,7 @@
                                  :jednina  "љубав"
                                  :mnozina  "љубави"}
                                 {:rec  "радост"
+                                 :vrsta-reci  imenica-misaona-osecanje
                                  :prirodni-rod  rod-zenski
                                  :gramaticki-rod  rod-muski
                                  :znacenje  znacenje-predmet
@@ -311,6 +551,7 @@
                                  :mnozina  "радости"}])
 
 (def reci-zenskog-roda-predmeti [{:rec  "трава"
+                                  :vrsta-reci  imenica-zajednicka
                                   :prirodni-rod  rod-zenski
                                   :gramaticki-rod  rod-zenski
                                   :znacenje  znacenje-predmet
@@ -318,6 +559,7 @@
                                   :jednina  "трава"
                                   :mnozina  "траве"}
                                  {:rec  "кућа"
+                                  :vrsta-reci  imenica-zajednicka
                                   :prirodni-rod  rod-zenski
                                   :gramaticki-rod  rod-zenski
                                   :znacenje  znacenje-predmet
@@ -325,6 +567,7 @@
                                   :jednina  "кућа"
                                   :mnozina  "куће"}
                                  {:rec  "стена"
+                                  :vrsta-reci  imenica-zajednicka
                                   :prirodni-rod  rod-zenski
                                   :gramaticki-rod  rod-zenski
                                   :znacenje  znacenje-predmet
@@ -333,6 +576,7 @@
                                   :mnozina  "стене"}])
 
 (def reci-srednjeg-roda-predmeti [{:rec  "дугме"
+                                   :vrsta-reci  imenica-zajednicka
                                    :prirodni-rod  rod-srednji
                                    :gramaticki-rod  rod-srednji
                                    :znacenje  znacenje-predmet
@@ -340,6 +584,7 @@
                                    :jednina  "дугме"
                                    :mnozina  "дугмад"}
                                   {:rec  "име"
+                                   :vrsta-reci  imenica-zajednicka
                                    :prirodni-rod  rod-srednji
                                    :gramaticki-rod  rod-srednji
                                    :znacenje  znacenje-predmet
@@ -347,6 +592,7 @@
                                    :jednina  "име"
                                    :mnozina  "имена"}
                                   {:rec  "поље"
+                                   :vrsta-reci  imenica-zajednicka
                                    :prirodni-rod  rod-srednji
                                    :gramaticki-rod  rod-srednji
                                    :znacenje  znacenje-predmet
@@ -354,6 +600,7 @@
                                    :jednina  "поље"
                                    :mnozina  "поља"}
                                   {:rec  "село"
+                                   :vrsta-reci  imenica-zajednicka
                                    :prirodni-rod  rod-srednji
                                    :gramaticki-rod  rod-srednji
                                    :znacenje  znacenje-predmet
