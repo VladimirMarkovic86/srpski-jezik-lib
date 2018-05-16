@@ -1,5 +1,5 @@
-(ns srpski-jezik.glasovne-promene
-  (:require [srpski-jezik.glasovne-promene :as gp]
+(ns srpski-jezik-lib.glasovne-promene
+  (:require [srpski-jezik-lib.glasovne-promene :as gp]
             [utils-lib.core :refer :all]
             [clojure.string :as cstr]))
 

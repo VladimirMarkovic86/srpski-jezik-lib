@@ -1,6 +1,6 @@
-(ns srpski-jezik.glasovne-promene-test
+(ns srpski-jezik-lib.glasovne-promene-test
   (:require [clojure.test :refer :all]
-            [srpski-jezik.glasovne-promene :refer :all]))
+            [srpski-jezik-lib.glasovne-promene :refer :all]))
 
 (deftest test-glasovnih-promena
   (testing

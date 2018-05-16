@@ -1,9 +1,4 @@
-(ns srpski-jezik.luc)
-
-(defn foo
-  "I don't do a whole lot."
-  [x]
-  (println x "Hello, World!"))
+(ns srpski-jezik-lib.luc)
 
 (def parovi
  [[\е 101]
@@ -70,8 +65,8 @@
   [#{\G \Г} [\Г \G]]
   [#{\d \д} [\д \d]]
   [#{\D \Д} [\Д \D]]
-  [#{\| \đ \ђ} [\ђ \đ]]
-  [#{\\ \Đ \Ђ} [\Ђ \Đ]]
+  [#{\| \đ \ђ "dj"} [\ђ \đ]]
+  [#{\\ \Đ \Ђ "DJ" "Dj"} [\Ђ \Đ]]
   [#{\e \е} [\е \e]]
   [#{\E \Е} [\Е \E]]
   [#{\` \\ \ž \ж} [\ж \ž]]
@@ -86,14 +81,14 @@
   [#{\K \К} [\К \K]]
   [#{\l \л} [\л \l]]
   [#{\L \Л} [\Л \L]]
-  [#{\q} [\љ \l]]
-  [#{\Q} [\Љ \L]]
+  [#{\q "lj"} [\љ "lj"]]
+  [#{\Q "LJ" "Lj"} [\Љ "Lj"]]
   [#{\m \м} [\м \m]]
   [#{\M \М} [\М \M]]
   [#{\n \н} [\н \n]]
   [#{\N \Н} [\Н \N]]
-  [#{\w} [\њ \n]]
-  [#{\W} [\Њ \N]]
+  [#{\w "nj"} [\њ "nj"]]
+  [#{\W "NJ" "Nj"} [\Њ "Nj"]]
   [#{\o \о} [\о \o]]
   [#{\O \О} [\О \O]]
   [#{\p \п} [\п \p]]
@@ -118,6 +113,8 @@
   [#{\^ \Č \Ч} [\Ч \Č]]
   [#{\}} [\ћ \ć]]
   [#{\]} [\Ћ \Ć]]
+  [#{"dz" "dž"} [\џ "dž"]]
+  [#{"Dz" "Dž" "DŽ" "DZ"} [\Џ "Dž"]]
   [#{\{} [\ш \š]]
   [#{\[} [\Ш \Š]]
   [#{\š \ш} [\ш \š]]
@@ -139,10 +136,26 @@
 
 (defn read-file
  []
- (let [tekst (char-array (slurp (clojure.java.io/resource "tekst2")))
-       kod-slova (atom {})]
+ (let [tekst (char-array (slurp (clojure.java.io/resource "tekst3")))
+       dvojno-slovo (atom "")
+       first-time (atom true)]
   (doseq [slovo tekst]
-   (stampaj-slovo slovo 0)
+   (if (not @first-time)
+    (let [uslov-i (and (contains? #{"d" "D" "l" "L" "n" "N"}
+                                  @dvojno-slovo)
+                       (contains? #{"j" "J" "z" "Z" "ž" "Ž"}
+                                  (str slovo)))]
+     (when uslov-i
+      (stampaj-slovo (str @dvojno-slovo slovo) 0)
+      (reset! dvojno-slovo ""))
+     (when (not uslov-i)
+      (when (not (empty? @dvojno-slovo))
+       (stampaj-slovo (get (char-array @dvojno-slovo) 0) 0))
+      (reset! dvojno-slovo (str slovo))
+      ))
+     (reset! dvojno-slovo (str slovo))
+    )
+   (reset! first-time false)
 ;   (if (or (= (int slovo) 142)
 ;           (= (int slovo) 147))
 ;    (println (str slovo " -------"))

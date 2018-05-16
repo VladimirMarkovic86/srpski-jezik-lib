@@ -1,6 +1,6 @@
-(ns srpski-jezik.padezi-test
+(ns srpski-jezik-lib.padezi-test
   (:require [clojure.test :refer :all]
-            [srpski-jezik.padezi :refer :all]))
+            [srpski-jezik-lib.padezi :refer :all]))
 
 (deftest test-transformisi-rec
   (testing

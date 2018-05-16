@@ -1,7 +1,7 @@
-(ns srpski-jezik.padezi
-  (:require [srpski-jezik.glasovne-promene :as gp]
-            [srpski-jezik.pismo :as p]
-            [srpski-jezik.luc :as luc]
+(ns srpski-jezik-lib.padezi
+  (:require [srpski-jezik-lib.glasovne-promene :as gp]
+            [srpski-jezik-lib.pismo :as p]
+            [srpski-jezik-lib.luc :as luc]
             [clojure.string :as cstr]))
 
  ; 70 стр. 1. ПОДЕЛА ИМЕНИЦА ПРЕМА ЗНАЧЕЊУ

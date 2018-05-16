@@ -1,4 +1,4 @@
-(ns personal-organiser-server.brojevi)
+(ns srpski-jezik-lib.brojevi)
 
 ;; pokusaj sa gradjenjem reci, hiljadu ili hiljada, milion ili miliona
 
