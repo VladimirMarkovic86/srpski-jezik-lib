@@ -1,36 +1,20 @@
-# Srpski jezik library
+# Српски језик библиотека
 
-Srpski jezik library
+Српски језик библиотека је clojure пројекат у току развоја, и треба да имплементира исправку правописних грешака у текстовима на српском језику.
 
-## Installation
+### Инсталирање
 
-Download from http://gitlab:1610/VladimirMarkovic86/srpski-jezik-lib.
+Након имплементирања функционалности библиотека ће бити доступна clojure пројектима као следећа зависност у project.clj фајлу:
 
-## Usage
+```
+[org.clojars.vladimirmarkovic86/srpski-jezik-lib "0.1.0"]
+```
 
-FIXME: explanation
+## Аутори
 
-    $ java -jar server-0.1.0-standalone.jar [args]
-
-## Options
-
-FIXME: listing of options this app accepts.
-
-## Examples
-
-...
-
-### Bugs
-
-...
-
-### Any Other Sections
-### That You Think
-### Might be Useful
+* **Владимир Марковић** - [Владимир Марковић](https://github.com/VladimirMarkovic86)
 
 ## License
 
-Copyright © 2018 FIXME
+This project is licensed under the Eclipse Public License 1.0 - see the [LICENSE](LICENSE) file for details
 
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
